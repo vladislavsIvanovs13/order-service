@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: order
+
+server:
+  port: 8081
+
+cache:
+  dataObjects: 1000
+  operations: 10000
+  probability: 0.9
