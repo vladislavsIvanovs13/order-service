@@ -2,7 +2,10 @@ package org.order.services;
 
 import org.order.dto.ProductDto;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,9 +24,13 @@ public class OrderService {
     private int operations;
 
     public List<ProductDto> getProducts() {
-        // retrieve all ids from product-service
-        // localhost:8080/products/getIds
-        // and save in data list
+        RestTemplate restTemplate = new RestTemplate();
+        List<Integer> data =
+                restTemplate.exchange(
+                    "http://localhost:8080/products/getIds",
+                    HttpMethod.GET, null,
+                    new ParameterizedTypeReference<List<Integer>>() {})
+                    .getBody();
 
         List<Integer> flow = new ArrayList<>();
         Random random = new Random();
@@ -39,12 +46,12 @@ public class OrderService {
         }
 
         var end = System.nanoTime();
-        for (int productId : flow)
-            products.add(getProduct(productId));
-
-        // many calls to
-        // localhost:8080/products/{productId}
-        // have to be made
+        for (int productId : flow) {
+            var product = restTemplate.getForObject(
+                "http://localhost:8080/products/{productId}",
+                ProductDto.class, productId);
+            products.add(product);
+        }
 
         System.out.println("Serving " + dataObjects + " products");
         System.out.printf(Locale.US, "Execution time: %.4f s%n", (System.nanoTime() - end) / 1_000_000_000.0);
