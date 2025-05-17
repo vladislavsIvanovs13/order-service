@@ -7,10 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 
 @Service
 public class OrderService {
@@ -19,6 +16,9 @@ public class OrderService {
 
     @Value("${cache.probability}")
     private double probability;
+
+    @Value("${cache.weight}")
+    private double weight;
 
     @Value("${cache.operations}")
     private int operations;
@@ -30,15 +30,15 @@ public class OrderService {
                     "http://localhost:8080/products/getIds",
                     HttpMethod.GET, null,
                     new ParameterizedTypeReference<List<Integer>>() {})
-                    .getBody();
+                .getBody();
 
         List<Integer> flow = new ArrayList<>();
         Random random = new Random();
         List<ProductDto> products = new ArrayList<>();
+        Collections.shuffle(data);
 
-        // need to check modelling course technic about probabilities and ifs
         for (int i = 0; i < operations; i++) {
-            int bound = (int) Math.round(0.1 * dataObjects);
+            int bound = (int) Math.round(weight * dataObjects);
             if (random.nextDouble() < probability)
                 flow.add(data.get(random.nextInt(0, bound)));
             else
@@ -53,7 +53,7 @@ public class OrderService {
             products.add(product);
         }
 
-        System.out.println("Serving " + dataObjects + " products");
+        System.out.println("Received " + dataObjects + " products");
         System.out.printf(Locale.US, "Execution time: %.4f s%n", (System.nanoTime() - end) / 1_000_000_000.0);
         return products;
     }
